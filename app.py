@@ -1,47 +1,37 @@
 import streamlit as st
+from streamlit_javascript import st_javascript
 from PIL import Image
 import base64
 import io
 
 st.set_page_config(page_title="Calculadora iFood - Anexo", layout="centered")
 
-# CSS customizado
+# CSS Apple-like
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
-
     html, body, [class*="css"] {
         font-family: 'Roboto', sans-serif;
-        background-color: #f9f9f9;
+        background-color: #fff;
     }
-
     .logo-container {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 15px;
+        text-align: center;
+        margin-bottom: 20px;
     }
-
-    .stTextInput input {
-        font-size: 18px !important;
-        height: 55px !important;
-        padding-left: 15px;
-    }
-
-    .stButton button {
+    .btn-primary {
         background-color: #1c1c1c;
         color: white;
+        font-size: 18px;
         font-weight: 600;
         border-radius: 10px;
         padding: 14px;
-        font-size: 18px;
         width: 100%;
-        margin-top: 15px;
+        border: none;
+        cursor: pointer;
     }
-    .stButton button:hover {
+    .btn-primary:hover {
         background-color: #000;
-        transition: 0.3s;
     }
-
     .result-card {
         background-color: #1eb540;
         padding: 45px;
@@ -49,71 +39,107 @@ st.markdown("""
         text-align: center;
         margin-top: 20px;
     }
-
     .result-price {
-        font-size: 7em;
+        font-size: 6em;
         font-weight: 700;
         color: #fff;
-        margin: 0;
-    }
-
-    .footer-text {
-        text-align: center;
-        margin-top: 70px;
-        font-size: 18px;
-        color: #000;
-        font-weight: 500;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Exibir logo
-logo_path = "Ativo 1.png"
-try:
-    logo = Image.open(logo_path)
-    buffer = io.BytesIO()
-    logo.save(buffer, format="PNG")
-    b64_logo = base64.b64encode(buffer.getvalue()).decode()
-    st.markdown(f'<div class="logo-container"><img src="data:image/png;base64,{b64_logo}" width="180"></div>', unsafe_allow_html=True)
-except:
-    st.warning("Logo não encontrada, adicione 'Ativo 1.png' na mesma pasta.")
+# Logo e título
+st.markdown('<div class="logo-container"><h1>Calculadora de Precificação iFood</h1></div>', unsafe_allow_html=True)
+st.write("Preencha os dados abaixo para calcular o preço ideal no cardápio:")
 
-st.title("Calculadora de Precificação iFood")
-st.write("Preencha os dados abaixo para calcular o preço ideal no cardápio.")
-
-# Inputs
-preco_cardapio = st.text_input("Preço do produto no cardápio (R$)", placeholder="Ex.: 25,90")
-taxa_ifood = st.text_input("Todas as Taxas do iFood (%)", placeholder="Ex.: 23")
-impostos = st.text_input("Impostos (%) (opcional)", placeholder="Ex.: 5")
-margem = st.text_input("Margem de Lucro (%) (opcional)", placeholder="Ex.: 20")
-
-# Estado
+# Estado inicial
 if "calculado" not in st.session_state:
     st.session_state.calculado = False
+    st.session_state.resultado = None
 
 if not st.session_state.calculado:
-    if st.button("Calcular"):
-        try:
-            preco_valor = float(preco_cardapio.replace(".", "").replace(",", ".")) if preco_cardapio else 0
-            taxa_valor = float(taxa_ifood.replace(".", "").replace(",", ".")) / 100 if taxa_ifood else 0
-            impostos_valor = float(impostos.replace(".", "").replace(",", ".")) / 100 if impostos else 0
-            margem_valor = float(margem.replace(".", "").replace(",", ".")) / 100 if margem else 0
+    # HTML + JS para inputs
+    js_code = """
+        const formatNumber = (el) => {
+            el.addEventListener('input', function() {
+                let value = this.value.replace(/\\D/g, '');
+                if (value) {
+                    this.value = (parseInt(value) / 100).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                }
+            });
+        };
 
-            if preco_valor > 0:
-                preco_sugerido = preco_valor / (1 - (taxa_valor + impostos_valor + margem_valor))
-                st.markdown(f"""
-                    <div class="result-card">
-                        <p class="result-price">R$ {preco_sugerido:,.2f}</p>
-                    </div>
-                """, unsafe_allow_html=True)
-                st.session_state.calculado = True
-            else:
-                st.error("Informe pelo menos o preço do produto.")
-        except ValueError:
-            st.error("Preencha os campos corretamente usando números.")
+        const fields = {
+            preco: document.getElementById('preco'),
+            taxa: document.getElementById('taxa'),
+            impostos: document.getElementById('impostos'),
+            margem: document.getElementById('margem')
+        };
+
+        Object.values(fields).forEach(el => {
+            el.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9,]/g, '');
+            });
+        });
+
+        formatNumber(fields.preco);
+
+        const dados = {
+            preco: fields.preco.value,
+            taxa: fields.taxa.value,
+            impostos: fields.impostos.value,
+            margem: fields.margem.value
+        };
+
+        return dados;
+    """
+
+    # Renderizar formulário HTML
+    st.markdown("""
+    <div style="max-width:400px;margin:auto;">
+        <div style="margin-bottom:15px;">
+            <label>Preço do produto no cardápio (R$)</label>
+            <input id="preco" type="text" placeholder="Ex.: 25,90" style="padding:12px;font-size:18px;border-radius:10px;border:1px solid #ccc;width:100%;">
+        </div>
+        <div style="margin-bottom:15px;">
+            <label>Todas as Taxas do iFood (%)</label>
+            <input id="taxa" type="text" placeholder="Ex.: 23" style="padding:12px;font-size:18px;border-radius:10px;border:1px solid #ccc;width:100%;">
+        </div>
+        <div style="margin-bottom:15px;">
+            <label>Impostos (%) (opcional)</label>
+            <input id="impostos" type="text" placeholder="Ex.: 5" style="padding:12px;font-size:18px;border-radius:10px;border:1px solid #ccc;width:100%;">
+        </div>
+        <div style="margin-bottom:20px;">
+            <label>Margem de Lucro (%) (opcional)</label>
+            <input id="margem" type="text" placeholder="Ex.: 20" style="padding:12px;font-size:18px;border-radius:10px;border:1px solid #ccc;width:100%;">
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Botão calcular
+    if st.button("Calcular"):
+        dados = st_javascript(js_code)
+        preco = float(dados["preco"].replace(".", "").replace(",", ".")) if dados["preco"] else 0
+        taxa = float(dados["taxa"].replace(",", ".")) / 100 if dados["taxa"] else 0
+        impostos = float(dados["impostos"].replace(",", ".")) / 100 if dados["impostos"] else 0
+        margem = float(dados["margem"].replace(",", ".")) / 100 if dados["margem"] else 0
+
+        if preco > 0:
+            resultado = preco / (1 - (taxa + impostos + margem))
+            st.session_state.resultado = f"{resultado:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            st.session_state.calculado = True
+            st.experimental_rerun()
+        else:
+            st.error("Informe o preço do produto.")
 else:
+    # Exibir resultado
+    st.markdown(f"""
+        <div class="result-card">
+            <p class="result-price">R$ {st.session_state.resultado}</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Botão Novo Cálculo
     if st.button("Novo Cálculo"):
         st.session_state.calculado = False
+        st.session_state.resultado = None
         st.experimental_rerun()
-
-st.markdown('<p class="footer-text">Com a Anexo, você precifica o seu produto no iFood da forma correta.</p>', unsafe_allow_html=True)
