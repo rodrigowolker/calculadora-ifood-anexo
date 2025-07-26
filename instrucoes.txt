@@ -6,8 +6,7 @@
 3. Envie os arquivos:
    - app.py
    - requirements.txt
-4. (Opcional) Adicione sua logo na mesma pasta, mas este código já está funcional sem logo.
-5. No painel do Streamlit Cloud, clique em "New App".
-6. Escolha o repositório, branch e o arquivo principal (app.py).
-7. Clique em "Deploy" e aguarde.
-8. Seu app estará online com link: https://seuapp.streamlit.app
+4. No painel do Streamlit Cloud, clique em "New App".
+5. Escolha o repositório, branch e o arquivo principal (app.py).
+6. Clique em "Deploy" e aguarde.
+7. Seu app estará online com link: https://seuapp.streamlit.app
