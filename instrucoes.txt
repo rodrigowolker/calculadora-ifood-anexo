@@ -1,12 +1,19 @@
 
 # Instruções para publicar no Streamlit Cloud
 
-1. Crie uma conta no Streamlit Cloud: https://streamlit.io/cloud
-2. Crie um repositório no GitHub (público).
-3. Envie os arquivos:
+1. Certifique-se de que os seguintes arquivos estão na pasta:
    - app.py
    - requirements.txt
-4. No painel do Streamlit Cloud, clique em "New App".
-5. Escolha o repositório, branch e o arquivo principal (app.py).
+   - Ativo 1.png (logo)
+
+2. Crie um repositório no GitHub (público).
+
+3. Faça upload desses arquivos no GitHub.
+
+4. Vá para https://streamlit.io/cloud e clique em "New App".
+
+5. Escolha o repositório e selecione o arquivo principal: app.py
+
 6. Clique em "Deploy" e aguarde.
-7. Seu app estará online com link: https://seuapp.streamlit.app
+
+7. O app ficará disponível com link público.
