@@ -165,9 +165,9 @@ def carregar_csv_em_lote(csv_bytes: bytes) -> pd.DataFrame:
 
 def main() -> None:
     st.set_page_config(
-        page_title="Calculadora iFood Aprimorada",
+        page_title="Calculadora de Precificação iFood",
         layout="centered",
-        page_icon="🍔",
+        page_icon="favanexo.png",
     )
 
     # Exibe o logo da Agência no topo, se o arquivo existir
@@ -350,8 +350,17 @@ def main() -> None:
         with col3:
             # Botão para limpar histórico
             if st.button("Limpar Histórico"):
+                # Limpa o histórico
                 st.session_state.historico = st.session_state.historico.iloc[0:0]
-                st.experimental_rerun()
+                # Recarrega a interface para refletir a mudança.  Utiliza st.rerun(),
+                # que é a API oficial a partir das versões recentes.  Se não
+                # estiver disponível, ignora a chamada silenciosamente.
+                try:
+                    # type: ignore[attr-defined]
+                    st.rerun()  # Streamlit 1.27+
+                except Exception:
+                    # Fallback: não força recarregar para versões antigas
+                    pass
 
     st.markdown("---")
 
