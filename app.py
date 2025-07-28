@@ -4,11 +4,12 @@ Aplicativo Streamlit aprimorado para precificação de itens no iFood.
 Este app é uma evolução da calculadora original criada com ChatGPT.  Ele foi
 projetado para atender às necessidades de gestores de restaurantes que
 precisam calcular o preço ideal de venda no iFood considerando diversas
-variáveis, como as taxas do plano do iFood, impostos, margem de lucro,
-custo de embalagem, custos logísticos e descontos/promos.  Além do cálculo
-individual, o aplicativo mantém um histórico das precificações realizadas,
-permite importar um cardápio em formato CSV para precificação em lote e
-exportar os resultados em CSV ou PDF.
+variáveis, como as taxas do plano do iFood e custos logísticos.  Esta
+versão removeu campos menos utilizados (impostos, margem de lucro,
+custo de embalagem e desconto), simplificando o preenchimento.  Além do
+cálculo individual, o aplicativo mantém um histórico das precificações
+realizadas, permite importar um cardápio em formato CSV para
+precificação em lote e exportar os resultados em CSV ou PDF.
 
 Para executar este aplicativo, é necessário ter o Streamlit instalado no
 ambiente.  Execute-o com o comando:
@@ -73,19 +74,21 @@ def calcular_preco_ifood(
 def gerar_pdf_tabela(df: pd.DataFrame, titulo: str) -> bytes:
     """Gera um PDF simples a partir de um DataFrame.
 
-    O PDF contém um título e uma tabela com as colunas do DataFrame.  Este
-    método utiliza a biblioteca FPDF para criar o PDF em memória.  A saída
-    é retornada em formato ``bytes`` para ser usada diretamente em
-    `st.download_button`.
+    O PDF contém um título e uma tabela com as colunas do DataFrame.  Para
+    maximizar a compatibilidade com diferentes versões da biblioteca
+    ``fpdf``/``fpdf2``, esta função tenta primeiro produzir o PDF via
+    ``dest='S'`` (que normalmente retorna uma string ou bytes).  Caso
+    ocorra algum erro (ou o retorno não seja um tipo esperado), ele
+    recorre a gravar o conteúdo em um ``BytesIO``.  No final, sempre
+    retorna um objeto ``bytes``, conforme exigido pela API do
+    ``streamlit.download_button``.
 
     Args:
         df: DataFrame a ser exportado.
         titulo: título exibido no cabeçalho do PDF.
 
     Returns:
-        Conteúdo do PDF em bytes.  O método detecta se o retorno de
-        ``pdf.output(dest='S')`` é uma string (nas versões antigas da
-        biblioteca) ou bytes (em fpdf2) e converte adequadamente.
+        Conteúdo do PDF em bytes.
     """
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -94,31 +97,45 @@ def gerar_pdf_tabela(df: pd.DataFrame, titulo: str) -> bytes:
     pdf.cell(0, 10, titulo, ln=True, align="C")
     pdf.ln(5)
     pdf.set_font("Arial", size=10)
-    # Largura das colunas baseada no número de colunas
+    # Calcula largura das colunas proporcionalmente ao número de colunas
     col_width = pdf.w / (len(df.columns) + 1)
-    # Cabeçalho
+    # Cabeçalho da tabela
     for col in df.columns:
         pdf.cell(col_width, 8, txt=str(col), border=1, align="C")
     pdf.ln()
-    # Linhas
+    # Linhas da tabela
     for _, row in df.iterrows():
         for item in row:
             pdf.cell(col_width, 8, txt=str(item), border=1, align="C")
         pdf.ln()
-    # Nas versões antigas de fpdf, output(dest='S') retorna string; em fpdf2 retorna bytes
-    raw = pdf.output(dest="S")
-    if isinstance(raw, str):
-        return raw.encode("latin-1")
-    return raw
+    # Tenta gerar o conteúdo via dest='S' (string) para maior compatibilidade
+    try:
+        pdf_content = pdf.output(dest="S")  # type: ignore[no-untyped-call]
+        # O método pode retornar ``str`` (em python 2/algumas versões) ou ``bytes``.
+        if isinstance(pdf_content, bytes):
+            return pdf_content
+        elif isinstance(pdf_content, str):
+            # Converte string para bytes usando latin-1
+            return pdf_content.encode("latin-1")
+        else:
+            # Qualquer outro tipo não é esperado; convertemos via buffer
+            raise TypeError
+    except Exception:
+        # Fallback: grava em buffer e lê bytes
+        buffer = io.BytesIO()
+        pdf.output(buffer)  # type: ignore[no-untyped-call]
+        return buffer.getvalue()
 
 
 def carregar_csv_em_lote(csv_bytes: bytes) -> pd.DataFrame:
     """Lê um CSV enviado pelo usuário e retorna um DataFrame.
 
     Espera‑se que o CSV contenha ao menos as colunas ``nome_produto`` e
-    ``preco_cardapio``.  Outras colunas opcionais são ``taxa_ifood``,
-    ``impostos``, ``margem``, ``custo_embalagem``, ``custo_logistica`` e
-    ``desconto``.  Valores ausentes serão preenchidos com padrões.
+    ``preco_cardapio``.  Os campos opcionais mais relevantes são
+    ``taxa_ifood`` e ``custo_logistica``.  As colunas relacionadas a
+    impostos, margens, embalagens ou descontos são preservadas apenas
+    por compatibilidade, mas seus valores serão ignorados.  Valores
+    ausentes serão preenchidos com padrões.
 
     Args:
         csv_bytes: arquivo CSV em bytes.
@@ -156,23 +173,23 @@ def main() -> None:
     st.title("Calculadora de Precificação iFood - Versão Aprimorada")
     st.markdown(
         "Esta ferramenta ajuda a calcular o preço ideal de venda no iFood, "
-        "considerando plano do iFood, impostos, margem de lucro, custo de "
-        "embalagem, logística e descontos. Você também pode carregar um "
-        "arquivo CSV para precificar vários itens de uma vez."
+        "considerando o plano escolhido e custos logísticos. Os campos de "
+        "impostos, margem de lucro, custo de embalagem e desconto foram "
+        "removidos para simplificar o processo. Você também pode carregar "
+        "um arquivo CSV para precificar vários itens de uma vez."
     )
 
     # Inicializa histórico na sessão
     if "historico" not in st.session_state:
+        # O histórico agora contém apenas as colunas essenciais: nome, preço de cardápio,
+        # taxa do iFood, custo de logística e preço sugerido.  Campos de impostos,
+        # margem, embalagem e desconto foram removidos conforme solicitado.
         st.session_state.historico = pd.DataFrame(
             columns=[
                 "Nome do Produto",
                 "Preço Cardápio (R$)",
                 "Taxa iFood (%)",
-                "Impostos (%)",
-                "Margem (%)",
-                "Custo Embalagem (R$)",
                 "Custo Logística (R$)",
-                "Desconto (%)",
                 "Preço Sugerido iFood (R$)",
             ]
         )
@@ -202,24 +219,10 @@ def main() -> None:
                 )
             else:
                 taxa_ifood = planos_ifood[plano_escolhido]
-            impostos = st.number_input(
-                "Impostos (%) (ICMS/ISS)", min_value=0.0, max_value=100.0, value=5.0, step=0.1
-            )
-            margem = st.number_input(
-                "Margem de Lucro (%)", min_value=0.0, max_value=100.0, value=20.0, step=0.1
-            )
-            custo_embalagem = st.number_input(
-                "Custo de Embalagem (R$)", min_value=0.0, value=0.0, step=0.01, format="%.2f"
-            )
+            # Os campos de impostos, margem, custo de embalagem e desconto foram removidos.
+            # Permanece apenas o custo de logística/entrega para permitir ajuste do valor total.
             custo_logistica = st.number_input(
                 "Custo de Logística/Entrega (R$)", min_value=0.0, value=0.0, step=0.01, format="%.2f"
-            )
-            desconto = st.number_input(
-                "Desconto/Acréscimo (%) (use negativo para acréscimo)",
-                min_value=-100.0,
-                max_value=100.0,
-                value=0.0,
-                step=0.1,
             )
             calcular_btn = st.form_submit_button("Calcular")
 
@@ -228,43 +231,37 @@ def main() -> None:
             if not nome_produto.strip():
                 st.warning("Por favor, informe o nome do produto.")
             else:
+                # Com os campos de impostos, margem, embalagem e desconto removidos,
+                # passamos zeros para essas variáveis.  O custo de logística é o
+                # único acréscimo ao preço de cardápio considerado no cálculo.
                 preco_sugerido = calcular_preco_ifood(
                     preco_cardapio=preco_cardapio,
                     taxa_ifood=taxa_ifood,
-                    impostos=impostos,
-                    margem=margem,
-                    custo_embalagem=custo_embalagem,
+                    impostos=0.0,
+                    margem=0.0,
+                    custo_embalagem=0.0,
                     custo_logistica=custo_logistica,
-                    desconto=desconto,
+                    desconto=0.0,
                 )
                 if preco_sugerido is None:
                     st.error(
-                        "A soma das porcentagens de taxa do iFood, impostos, margem e desconto é maior ou igual a 100 %. "
-                        "Ajuste os valores para obter um preço válido."
+                        "A taxa do iFood deve ser menor que 100 %. Ajuste o valor para obter um preço válido."
                     )
                 else:
                     st.success(f"Preço sugerido no iFood: R$ {preco_sugerido:.2f}")
-                    # Tabela de detalhamento
+                    # Tabela de detalhamento com apenas os itens relevantes
                     detalhamento = pd.DataFrame(
                         {
                             "Item": [
                                 "Preço no cardápio",
-                                "Custo embalagem",
                                 "Custo logística",
                                 "Taxa iFood",
-                                "Impostos",
-                                "Margem de lucro",
-                                "Desconto/Acréscimo",
                                 "Preço sugerido",
                             ],
                             "Valor": [
                                 f"R$ {preco_cardapio:.2f}",
-                                f"R$ {custo_embalagem:.2f}",
                                 f"R$ {custo_logistica:.2f}",
                                 f"{taxa_ifood:.1f} %",
-                                f"{impostos:.1f} %",
-                                f"{margem:.1f} %",
-                                f"{desconto:.1f} %",
                                 f"R$ {preco_sugerido:.2f}",
                             ],
                         }
@@ -277,11 +274,7 @@ def main() -> None:
                             "Nome do Produto": [nome_produto],
                             "Preço Cardápio (R$)": [round(preco_cardapio, 2)],
                             "Taxa iFood (%)": [round(taxa_ifood, 2)],
-                            "Impostos (%)": [round(impostos, 2)],
-                            "Margem (%)": [round(margem, 2)],
-                            "Custo Embalagem (R$)": [round(custo_embalagem, 2)],
                             "Custo Logística (R$)": [round(custo_logistica, 2)],
-                            "Desconto (%)": [round(desconto, 2)],
                             "Preço Sugerido iFood (R$)": [preco_sugerido],
                         }
                     )
@@ -325,10 +318,9 @@ def main() -> None:
 
     with st.expander("Precificação em lote (importação de CSV)"):
         st.markdown(
-            "Você pode carregar um arquivo CSV com as colunas: ``nome_produto``, ``preco_cardapio``, "
-            "``taxa_ifood`` (opcional), ``impostos`` (opcional), ``margem`` (opcional), "
-            "``custo_embalagem`` (opcional), ``custo_logistica`` (opcional) e ``desconto`` (opcional).\n"
-            "Se uma coluna não existir, o valor padrão será 0 ou o definido no formulário."
+            "Você pode carregar um arquivo CSV com as colunas: ``nome_produto``, ``preco_cardapio`` e "
+            "``taxa_ifood`` (opcional) e ``custo_logistica`` (opcional).\n"
+            "Se uma coluna não existir ou estiver vazia, será utilizado o valor definido no formulário."
         )
         arquivo = st.file_uploader(
             "Selecione o arquivo CSV", type=["csv"], accept_multiple_files=False
@@ -336,29 +328,33 @@ def main() -> None:
         if arquivo is not None:
             try:
                 df = carregar_csv_em_lote(arquivo.getvalue())
-                # Aplica valores padrão se estiverem vazios
-                # Usa valores atuais do formulário individual como padrão
-                # Nota: estas variáveis são capturadas no escopo externo
+                # Aplica valores padrão se estiverem vazios (0) usando os valores definidos no formulário
                 df["taxa_ifood"] = df["taxa_ifood"].replace(0, taxa_ifood)
-                df["impostos"] = df["impostos"].replace(0, impostos)
-                df["margem"] = df["margem"].replace(0, margem)
-                df["custo_embalagem"] = df["custo_embalagem"].replace(0, custo_embalagem)
                 df["custo_logistica"] = df["custo_logistica"].replace(0, custo_logistica)
-                df["desconto"] = df["desconto"].replace(0, desconto)
+                # Para colunas que não são utilizadas (impostos, margem, embalagem, desconto),
+                # substituímos por zero para não interferir no cálculo.
+                if "impostos" in df.columns:
+                    df["impostos"] = 0.0
+                if "margem" in df.columns:
+                    df["margem"] = 0.0
+                if "custo_embalagem" in df.columns:
+                    df["custo_embalagem"] = 0.0
+                if "desconto" in df.columns:
+                    df["desconto"] = 0.0
                 # Calcula para cada linha
                 precos = []
                 for _, linha in df.iterrows():
                     preco = calcular_preco_ifood(
-                        preco_cardapio=float(linha["preco_cardapio"]),
-                        taxa_ifood=float(linha["taxa_ifood"]),
-                        impostos=float(linha["impostos"]),
-                        margem=float(linha["margem"]),
-                        custo_embalagem=float(linha["custo_embalagem"]),
-                        custo_logistica=float(linha["custo_logistica"]),
-                        desconto=float(linha["desconto"]),
+                        preco_cardapio=float(linha.get("preco_cardapio", 0)),
+                        taxa_ifood=float(linha.get("taxa_ifood", taxa_ifood)),
+                        impostos=0.0,
+                        margem=0.0,
+                        custo_embalagem=0.0,
+                        custo_logistica=float(linha.get("custo_logistica", custo_logistica)),
+                        desconto=0.0,
                     )
                     precos.append(preco if preco is not None else 0.0)
-                df_result = df.copy()
+                df_result = df[["nome_produto", "preco_cardapio", "taxa_ifood", "custo_logistica"]].copy()
                 df_result["preco_sugerido_ifood"] = precos
                 st.success("Arquivo processado com sucesso!")
                 st.dataframe(df_result, use_container_width=True)

@@ -31,20 +31,19 @@ PASSO A PASSO PARA UTILIZAR A CALCULADORA IFood APRIMORADA
    - O navegador padrão será aberto automaticamente com a interface da calculadora.
 
 6. **Usando a calculadora individual:**
-   - Preencha o nome do produto e o preço de cardápio.
-   - Selecione o plano do iFood. Caso escolha “Personalizado”, informe manualmente a taxa.
-   - Ajuste os campos de impostos, margem de lucro, custo de embalagem, custo de logística e desconto/acréscimo conforme necessário.
-   - Clique em **Calcular** e o aplicativo exibirá o preço sugerido.  É possível expandir o detalhamento do cálculo para ver como cada componente influenciou o resultado.
-   - Cada cálculo realizado é adicionado ao **Histórico de precificações**, que pode ser exportado em CSV ou PDF.  Há também um botão para limpar o histórico.
+   - Preencha o **nome do produto** e o **preço de cardápio**.
+   - Selecione o **plano do iFood**. Caso escolha "Personalizado", informe manualmente a taxa.
+   - Informe o **custo de logística/entrega** (se aplicável). Os campos de impostos, margem de lucro, custo de embalagem e desconto foram removidos nesta versão, já que esses valores costumam ser apurados em sistemas contábeis ou de gestão de CMV.
+   - Clique em **Calcular**. O aplicativo exibirá o preço sugerido e você pode expandir o detalhamento do cálculo para entender como a taxa do iFood e o custo de logística impactam o valor final.
+   - Cada cálculo realizado é adicionado ao **Histórico de precificações**, que pode ser exportado em CSV ou PDF. Há também um botão para limpar o histórico.
 
 7. **Precificação em lote (CSV):**
    - Prepare um arquivo CSV com as seguintes colunas (cabeçalhos em minúsculas):
      - `nome_produto` (obrigatório)
      - `preco_cardapio` (obrigatório)
-     - `taxa_ifood`, `impostos`, `margem`, `custo_embalagem`, `custo_logistica` e `desconto` (opcionais).
-   - Se uma coluna opcional não estiver presente ou a célula estiver vazia, será utilizado o valor padrão configurado no formulário individual no momento da importação.
-   - No aplicativo, expanda a seção **Precificação em lote (importação de CSV)**, faça o upload do seu arquivo CSV e aguarde o processamento.
-   - Os resultados serão exibidos em uma tabela e poderão ser baixados em formato CSV.
+     - `taxa_ifood` e `custo_logistica` (opcionais).  Colunas adicionais como `impostos`, `margem`, `custo_embalagem` ou `desconto` podem estar presentes por compatibilidade com versões anteriores, mas são ignoradas nesta versão e terão seus valores substituídos por zero.
+   - Se uma coluna opcional não estiver presente ou estiver vazia, será utilizado o valor padrão configurado no formulário individual no momento da importação (taxa do iFood selecionada e custo de logística informado).
+   - No aplicativo, expanda a seção **Precificação em lote (importação de CSV)**, faça o upload do seu arquivo CSV e aguarde o processamento.  Os resultados serão exibidos em uma tabela e poderão ser baixados em formato CSV.
 
 8. **Personalização adicional:**
    - O código foi escrito de forma modular.  Se desejar adicionar novos campos ou cálculos, edite o arquivo `app.py`, ajustando a função `calcular_preco_ifood` ou a interface conforme necessário.
