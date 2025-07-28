@@ -261,7 +261,7 @@ def main() -> None:
             custo_logistica = st.number_input(
                 "Custo de Logística/Entrega (R$)", min_value=0.0, value=0.0, step=0.01, format="%.2f"
             )
-            calcular_btn = st.form_submit_button("🧮 Calcular", use_container_width=True)
+            calcular_btn = st.form_submit_button("Calcular", use_container_width=True)
 
         if calcular_btn:
             # Validação básica
@@ -328,7 +328,7 @@ def main() -> None:
             # Botão de download de CSV
             csv_bytes = st.session_state.historico.to_csv(index=False).encode("utf-8")
             st.download_button(
-                label="📄 Baixar CSV",
+                label="Baixar CSV",
                 data=csv_bytes,
                 file_name="historico_precificacao.csv",
                 mime="text/csv",
@@ -341,7 +341,7 @@ def main() -> None:
                 titulo="Histórico de precificação iFood",
             )
             st.download_button(
-                label="📑 Baixar PDF",
+                label="Baixar PDF",
                 data=pdf_bytes,
                 file_name="historico_precificacao.pdf",
                 mime="application/pdf",
@@ -349,7 +349,7 @@ def main() -> None:
             )
         with col3:
             # Botão para limpar histórico
-            if st.button("🗑️ Limpar Histórico"):
+            if st.button("Limpar Histórico"):
                 st.session_state.historico = st.session_state.historico.iloc[0:0]
                 st.experimental_rerun()
 
