@@ -1,15 +1,7 @@
 """
-Aplicativo Streamlit aprimorado para precificação de itens no iFood.
+Calculadora de precificação de itens no iFood.
 
-Este app é uma evolução da calculadora original criada com ChatGPT.  Ele foi
-projetado para atender às necessidades de gestores de restaurantes que
-precisam calcular o preço ideal de venda no iFood considerando diversas
-variáveis, como as taxas do plano do iFood e custos logísticos.  Esta
-versão removeu campos menos utilizados (impostos, margem de lucro,
-custo de embalagem e desconto), simplificando o preenchimento.  Além do
-cálculo individual, o aplicativo mantém um histórico das precificações
-realizadas, permite importar um cardápio em formato CSV para
-precificação em lote e exportar os resultados em CSV ou PDF.
+A Anexo te ajuda a colocar o preço correto no seu cardápio do iFodd.
 
 Para executar este aplicativo, é necessário ter o Streamlit instalado no
 ambiente.  Execute-o com o comando:
