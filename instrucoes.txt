@@ -1,19 +1,55 @@
 
-# Instruções para publicar no Streamlit Cloud
+PASSO A PASSO PARA UTILIZAR A CALCULADORA IFood APRIMORADA
+=========================================================
 
-1. Certifique-se de que os seguintes arquivos estão na pasta:
-   - app.py
-   - requirements.txt
-   - Ativo 1.png (logo)
+1. **Pré‑requisitos:**
+   - Tenha o Python 3.9 ou superior instalado em sua máquina.
+   - Instale o gerenciador de pacotes `pip` se ainda não estiver disponível.
 
-2. Crie um repositório no GitHub (público).
+2. **Clonar ou copiar o projeto:**
+   - Salve os arquivos `app.py`, `requirements.txt` e `instrucoes.txt` em uma pasta do seu computador.
 
-3. Faça upload desses arquivos no GitHub.
+3. **Criar e ativar um ambiente virtual (opcional, mas recomendado):**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # Linux/macOS
+   venv\Scripts\activate    # Windows
+   ```
 
-4. Vá para https://streamlit.io/cloud e clique em "New App".
+4. **Instalar as dependências:**
+   - Execute o comando abaixo na pasta onde está o arquivo `requirements.txt`:
+     ```bash
+     pip install -r requirements.txt
+     ```
+   - Isso instalará as bibliotecas `streamlit`, `pandas` e `fpdf2` necessárias para o aplicativo.
 
-5. Escolha o repositório e selecione o arquivo principal: app.py
+5. **Executar o aplicativo:**
+   - Ainda na mesma pasta, execute:
+     ```bash
+     streamlit run app.py
+     ```
+   - O navegador padrão será aberto automaticamente com a interface da calculadora.
 
-6. Clique em "Deploy" e aguarde.
+6. **Usando a calculadora individual:**
+   - Preencha o nome do produto e o preço de cardápio.
+   - Selecione o plano do iFood. Caso escolha “Personalizado”, informe manualmente a taxa.
+   - Ajuste os campos de impostos, margem de lucro, custo de embalagem, custo de logística e desconto/acréscimo conforme necessário.
+   - Clique em **Calcular** e o aplicativo exibirá o preço sugerido.  É possível expandir o detalhamento do cálculo para ver como cada componente influenciou o resultado.
+   - Cada cálculo realizado é adicionado ao **Histórico de precificações**, que pode ser exportado em CSV ou PDF.  Há também um botão para limpar o histórico.
 
-7. O app ficará disponível com link público.
+7. **Precificação em lote (CSV):**
+   - Prepare um arquivo CSV com as seguintes colunas (cabeçalhos em minúsculas):
+     - `nome_produto` (obrigatório)
+     - `preco_cardapio` (obrigatório)
+     - `taxa_ifood`, `impostos`, `margem`, `custo_embalagem`, `custo_logistica` e `desconto` (opcionais).
+   - Se uma coluna opcional não estiver presente ou a célula estiver vazia, será utilizado o valor padrão configurado no formulário individual no momento da importação.
+   - No aplicativo, expanda a seção **Precificação em lote (importação de CSV)**, faça o upload do seu arquivo CSV e aguarde o processamento.
+   - Os resultados serão exibidos em uma tabela e poderão ser baixados em formato CSV.
+
+8. **Personalização adicional:**
+   - O código foi escrito de forma modular.  Se desejar adicionar novos campos ou cálculos, edite o arquivo `app.py`, ajustando a função `calcular_preco_ifood` ou a interface conforme necessário.
+
+9. **Encerrando o aplicativo:**
+   - Para parar o Streamlit, pressione `Ctrl+C` no terminal onde ele está em execução.
+
+Com esses passos, você terá a nova calculadora de precificação iFood pronta para uso.  Bons cálculos!
