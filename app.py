@@ -74,15 +74,18 @@ def gerar_pdf_tabela(df: pd.DataFrame, titulo: str) -> bytes:
     """Gera um PDF simples a partir de um DataFrame.
 
     O PDF contém um título e uma tabela com as colunas do DataFrame.  Este
-    método utiliza a biblioteca FPDF, que é leve e ideal para geração
-    rápida de PDFs em Streamlit.
+    método utiliza a biblioteca FPDF para criar o PDF em memória.  A saída
+    é retornada em formato ``bytes`` para ser usada diretamente em
+    `st.download_button`.
 
     Args:
         df: DataFrame a ser exportado.
         titulo: título exibido no cabeçalho do PDF.
 
     Returns:
-        Conteúdo do PDF em bytes.
+        Conteúdo do PDF em bytes.  O método detecta se o retorno de
+        ``pdf.output(dest='S')`` é uma string (nas versões antigas da
+        biblioteca) ou bytes (em fpdf2) e converte adequadamente.
     """
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -102,7 +105,11 @@ def gerar_pdf_tabela(df: pd.DataFrame, titulo: str) -> bytes:
         for item in row:
             pdf.cell(col_width, 8, txt=str(item), border=1, align="C")
         pdf.ln()
-    return pdf.output(dest="S").encode("latin-1")
+    # Nas versões antigas de fpdf, output(dest='S') retorna string; em fpdf2 retorna bytes
+    raw = pdf.output(dest="S")
+    if isinstance(raw, str):
+        return raw.encode("latin-1")
+    return raw
 
 
 def carregar_csv_em_lote(csv_bytes: bytes) -> pd.DataFrame:
