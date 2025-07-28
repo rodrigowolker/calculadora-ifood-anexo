@@ -1,7 +1,15 @@
 """
-Calculadora de precificação de itens no iFood.
+Aplicativo Streamlit aprimorado para precificação de itens no iFood.
 
-A Anexo te ajuda a colocar o preço correto no seu cardápio do iFodd.
+Este app é uma evolução da calculadora original criada com ChatGPT.  Ele foi
+projetado para atender às necessidades de gestores de restaurantes que
+precisam calcular o preço ideal de venda no iFood considerando diversas
+variáveis, como as taxas do plano do iFood e custos logísticos.  Esta
+versão removeu campos menos utilizados (impostos, margem de lucro,
+custo de embalagem e desconto), simplificando o preenchimento.  Além do
+cálculo individual, o aplicativo mantém um histórico das precificações
+realizadas, permite importar um cardápio em formato CSV para
+precificação em lote e exportar os resultados em CSV ou PDF.
 
 Para executar este aplicativo, é necessário ter o Streamlit instalado no
 ambiente.  Execute-o com o comando:
@@ -162,13 +170,50 @@ def main() -> None:
         page_icon="🍔",
     )
 
-    st.title("Calculadora de Precificação iFood - Versão Aprimorada")
+    # Exibe o logo da Agência no topo, se o arquivo existir
+    # Para evitar erros caso a imagem não esteja presente, usamos um bloco try/except.
+    try:
+        st.image("Ativo 1.png", width=180)
+    except Exception:
+        pass
+
+    st.title("Calculadora de Precificação iFood")
     st.markdown(
         "Esta ferramenta ajuda a calcular o preço ideal de venda no iFood, "
-        "considerando o plano escolhido e custos logísticos. Os campos de "
-        "impostos, margem de lucro, custo de embalagem e desconto foram "
-        "removidos para simplificar o processo. Você também pode carregar "
-        "um arquivo CSV para precificar vários itens de uma vez."
+        "considerando o plano escolhido e custos logísticos. Você também pode "
+        "carregar um arquivo CSV para precificar vários itens de uma vez."
+    )
+
+    # Estilos CSS personalizados para botões e componentes
+    st.markdown(
+        """
+        <style>
+        /* Botão Calcular dentro do formulário */
+        form button[type="submit"] {
+            background-color: #333333 !important;
+            color: #FFFFFF !important;
+            width: 100% !important;
+        }
+        /* Primeiro botão de download (Baixar CSV) */
+        div[data-testid="stDownloadButton"]:first-of-type button {
+            background-color: #007BFF !important;
+            color: #FFFFFF !important;
+            width: 100% !important;
+        }
+        /* Segundo botão de download (Baixar PDF) */
+        div[data-testid="stDownloadButton"]:nth-of-type(2) button {
+            background-color: #000000 !important;
+            color: #FFFFFF !important;
+            width: 100% !important;
+        }
+        /* Botão para limpar histórico */
+        div[data-testid="stButton"] button {
+            background-color: #DC3545 !important;
+            color: #FFFFFF !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
     )
 
     # Inicializa histórico na sessão
@@ -216,7 +261,7 @@ def main() -> None:
             custo_logistica = st.number_input(
                 "Custo de Logística/Entrega (R$)", min_value=0.0, value=0.0, step=0.01, format="%.2f"
             )
-            calcular_btn = st.form_submit_button("Calcular")
+            calcular_btn = st.form_submit_button("🧮 Calcular", use_container_width=True)
 
         if calcular_btn:
             # Validação básica
@@ -283,10 +328,11 @@ def main() -> None:
             # Botão de download de CSV
             csv_bytes = st.session_state.historico.to_csv(index=False).encode("utf-8")
             st.download_button(
-                label="Baixar CSV",
+                label="📄 Baixar CSV",
                 data=csv_bytes,
                 file_name="historico_precificacao.csv",
                 mime="text/csv",
+                use_container_width=True,
             )
         with col2:
             # Botão de download de PDF
@@ -295,14 +341,15 @@ def main() -> None:
                 titulo="Histórico de precificação iFood",
             )
             st.download_button(
-                label="Baixar PDF",
+                label="📑 Baixar PDF",
                 data=pdf_bytes,
                 file_name="historico_precificacao.pdf",
                 mime="application/pdf",
+                use_container_width=True,
             )
         with col3:
             # Botão para limpar histórico
-            if st.button("Limpar Histórico"):
+            if st.button("🗑️ Limpar Histórico"):
                 st.session_state.historico = st.session_state.historico.iloc[0:0]
                 st.experimental_rerun()
 
@@ -360,6 +407,10 @@ def main() -> None:
                 )
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo: {e}")
+
+    # Rodapé
+    st.markdown("---")
+    st.markdown("Desenvolvido por **Agência Anexo**.")
 
 
 if __name__ == "__main__":
